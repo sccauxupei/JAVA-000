@@ -17,7 +17,7 @@ import sun.misc.VM;
 import sun.reflect.Reflection;
 		
 public class XPClassLoader extends ClassLoader {
-	boolean needRefactory = false;
+	private boolean needRefactory = false;
     private static native void registerNatives();
     
 //    static {
@@ -69,15 +69,9 @@ public class XPClassLoader extends ClassLoader {
 		*真正work的代码
 		*
 		**/
-		InputStream inputStream;
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		byte[] code = null;
-		
-		try {
-			String s1 = resolvePath + ".xlass";
-			
-			inputStream = new FileInputStream(new File(s1));
-			
+		String xlassToBeProceed = resolvePath + ".xlass";					
+		try(ByteArrayOutputStream bos = new ByteArrayOutputStream();InputStream inputStream = new FileInputStream(new File(xlassToBeProceed))) {
 			code = deSerilizeXlass(inputStream,bos);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
