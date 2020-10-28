@@ -32,7 +32,7 @@ Proactor和Reactor:Proactor是服务端将数据处理好，客户端只需要�
 
 
 
-当结果数据的**顺序/中间顺序**不重要的时候，可以用异步。
+当结果数据的**顺序/中间结果顺序**不重要的时候，可以用异步。
 
 
 
@@ -52,4 +52,16 @@ HTTP服务端：
 
 Web服务端：封装了Session等会话相关的东西
 
-J2EE服务端：封装了J2EE企业级需要的监控买点MXBEAN等信息。
+J2EE服务端：封装了J2EE企业级需要的监控埋点MXBEAN等信息。  
+
+
+
+
+
+​		了解了下JMX，在项目里做了一个小Demo，看到它的使用方式，想到了Spring Cloud里面的refresh，感觉特别像。大概看了下Cloud里面的实现，发现好像确实用的是JMX去实现的。
+
+​		它主要起作用的是Scope这个，一般我们说Spring中的Scope时，想到的是Singleton或者Portotype，但其实早在SpringMVC阶段，就定义了Web相关的Scope，只不过这些东西刷面试题的时候并没有特别重点的点出，找到一篇博客讲Scope的（https://www.jianshu.com/p/188013dd3d02），正确性先搁置一边，大概他想表达的逻辑我理了一遍，没发现什么特别大的问题，跑跑打断点调试下估计就能验证了。
+
+​		Spring Cloud中refresh的实现就是在原有的基础上定义了一个RefreshScope（定义这个Scope的目的，详见AbstractBeanFactory#doGetBean）。
+
+​		它RefreshScope的写法感觉比较奇特，是直接在构造方法里对父类private name的成员变量进行重新赋值。
