@@ -1,4 +1,4 @@
-package cn.zs.mstpxu.io.server.netty;
+package cn.zs.mstpxu.io.server.netty.rec;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -7,6 +7,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.util.ReferenceCountUtil;
 
@@ -16,10 +17,15 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
-public class HttpHandler extends ChannelInboundHandlerAdapter {
+import org.apache.xml.resolver.apps.resolver;
 
+public class HttpHandler extends ChannelInboundHandlerAdapter {
+		//通过配置中心拉取配置
+		Map<String, String> pattern;
+	
 	 	@Override
 	    public void channelReadComplete(ChannelHandlerContext ctx) {
 	        ctx.flush();
@@ -32,6 +38,7 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
 	            FullHttpRequest fullRequest = (FullHttpRequest) msg;
 	            String uri = fullRequest.uri();
 	            //logger.info("接收到的请求url为{}", uri);
+	            System.out.println(fullRequest.content());
 	            
 //	            Pattern pattern = Pattern.compile("Java");
 //	            Matcher matcher1 = pattern.matcher("Python, Java, Go, C++");
@@ -52,7 +59,7 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
 	            response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(value.getBytes("UTF-8")));
 	            response.headers().set("Content-Type", "application/json");
 	            response.headers().setInt("Content-Length", response.content().readableBytes());
-
+	            response.headers().set("connection","keep-alive");
 	        } catch (Exception e) {
 	            response = new DefaultFullHttpResponse(HTTP_1_1, NO_CONTENT);
 	        } finally {
@@ -64,6 +71,7 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
 	                    ctx.write(response);
 	                }
 	            }
+	            
 	        }
 	    }
 

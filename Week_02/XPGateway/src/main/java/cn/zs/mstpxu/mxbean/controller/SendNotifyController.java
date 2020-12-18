@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import cn.zs.mstpxu.mxbean.interf.SpittleNotifier;
 
-@Controller
+//@Controller
 @RequestMapping("/biz5")
 public class SendNotifyController {
     @Autowired

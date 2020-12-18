@@ -1,13 +1,20 @@
 package cn.zs.mstpxu;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
+@RunWith(SpringRunner.class)
 @SpringBootTest
-class XpGatewayApplicationTests {
-
+public class XpGatewayApplicationTests {
+	@Value("${weather.appid}")
+	private String a;
+	
 	@Test
-	void contextLoads() {
+    public void contextLoads() {
+		System.err.println(a);
 	}
 
 }

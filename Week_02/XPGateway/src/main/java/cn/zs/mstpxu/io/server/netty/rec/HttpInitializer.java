@@ -1,4 +1,4 @@
-package cn.zs.mstpxu.io.server.netty;
+package cn.zs.mstpxu.io.server.netty.rec;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;

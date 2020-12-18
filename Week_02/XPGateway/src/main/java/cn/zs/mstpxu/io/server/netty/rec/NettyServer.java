@@ -1,6 +1,8 @@
-package cn.zs.mstpxu.io.server.netty;
+package cn.zs.mstpxu.io.server.netty.rec;
 
 import java.security.cert.CertificateException;
+
+import javax.net.ssl.SSLException;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -18,7 +20,6 @@ public class NettyServer {
     private boolean ssl;
     private int port;
     
-    
 	public NettyServer(boolean ssl, int port) {
 		this.ssl = ssl;
 		this.port = port;
@@ -31,7 +32,7 @@ public class NettyServer {
 
 
 
-	public void run() throws Exception {
+	public void run() throws CertificateException, SSLException {
         final SslContext sslCtx;
         if (ssl) {
             SelfSignedCertificate ssc = new SelfSignedCertificate();
@@ -53,12 +54,14 @@ public class NettyServer {
 				.option(ChannelOption.SO_SNDBUF, 2*1024)
 				.option(EpollChannelOption.SO_REUSEPORT, true);
 			boot.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class).handler(new LoggingHandler(LogLevel.INFO))
-				.childHandler(new HttpInitializer(sslCtx));
+				.childHandler(new HttpInitializer(sslCtx));	
 			
 	        Channel ch = boot.bind(port).sync().channel();
       
 	        ch.closeFuture().sync();
-	    } finally {
+	    }catch(Exception e) {
+	    	e.getClass().getName();
+	    }finally {
 	        bossGroup.shutdownGracefully();
 	        workerGroup.shutdownGracefully();
 	    }
