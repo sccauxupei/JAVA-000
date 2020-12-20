@@ -20,9 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class TimeCount {
-//    @Pointcut(
-//            "execution(* io.kimmking.rpcfx.demo..*.*Application.invoke*(..))"
-//            )
 	@Pointcut("@annotation(io.kimmking.rpcfx.demo.provider.annotation.Time)")
     public void agrsAop() {}
 

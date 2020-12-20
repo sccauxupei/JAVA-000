@@ -63,6 +63,7 @@ public class RpcAspectJ implements ApplicationContextAware{
 		//为抽象类方法添加注解和函数体的写法,将serviceClass,url传递
 		//误区：AspectJ似乎是编译时增强的，其实这也可以理解，毕竟在@Pointcut("@annotation())这里应该猜到的，如果不是编译期增强，那整个扫包、查看注解过程其实很长的
 		//但AOP调用并没又很慢，所以应该猜一下是编译期增强的。
+		//或者是我Spring生命周期的问题，或许试试pre
 		try {
 			DynamicType.Unloaded<T> aopTarget = (Unloaded<T>) new ByteBuddy().with(new NamingStrategy.AbstractBase() {//==subclass().name("io.kimmking.rpcfx.demo.consumer.TRpcSample")==
 						@Override

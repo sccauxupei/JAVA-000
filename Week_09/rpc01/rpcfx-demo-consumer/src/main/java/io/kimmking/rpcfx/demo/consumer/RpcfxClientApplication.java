@@ -39,21 +39,12 @@ public class RpcfxClientApplication {
 
 		// 新加一个OrderService
 		ApplicationContext context = SpringApplication.run(RpcfxClientApplication.class, args);
-//		Arrays.asList((context.getBeanDefinitionNames())).stream().filter(l->
-//		{
-//			return l.startsWith("io.kimmking");
-//		}).forEach(l->{System.out.println(l);});
 		try {
-//			UserService service = (UserService)context.getBean(RpcAspectJ.class).generateProxClass(UserService.class, "http://localhost:8080/");
 			RpcAspectJ utilAspectJ = context.getBean(RpcAspectJ.class);
-//			Arrays.asList(context.getBeanDefinitionNames()).forEach(System.out::println);
 			Object object = utilAspectJ.generateAOPProxClass(UserService.class, "http://localhost:8080/");
 			UserService service = (UserService) context.getBean(UserService.class.getName());
-//			service.findById(1);
 			System.err.println(service.findById(1));
-			//			service.findById(1);
 		} catch (BeansException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

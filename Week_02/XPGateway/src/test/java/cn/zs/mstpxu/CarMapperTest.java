@@ -33,7 +33,8 @@ public class CarMapperTest {
 	
 	@Test
 	public void test() {
-		System.out.println(String.format("https://tianqiapi.com/api?version=v6&appid=%s&appsecret=%s", "name", "value"));
+//		System.out.println(String.format("https://tianqiapi.com/api?version=v6&appid=%s&appsecret=%s", "name", "value"));
+		System.out.println("" + 5%2);
 	}
 	
 }

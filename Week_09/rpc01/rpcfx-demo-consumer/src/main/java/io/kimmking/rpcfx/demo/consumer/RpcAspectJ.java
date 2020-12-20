@@ -57,8 +57,6 @@ public class RpcAspectJ implements ApplicationContextAware{
     public <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){
     	//判断是否需要增强
     	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
-    	//获取实现类
-//			Class<T> delegateClass = (Class<T>) generateProxClass(serviceClass, url, delegateMehtod).getClass();
 		Method[] targetMehtod = serviceClass.getDeclaredMethods();
 		//为抽象类方法添加注解和函数体的写法,将serviceClass,url传递
 		//误区：AspectJ似乎是编译时增强的，其实这也可以理解，毕竟在@Pointcut("@annotation())这里应该猜到的，如果不是编译期增强，那整个扫包、查看注解过程其实很长的
@@ -88,8 +86,11 @@ public class RpcAspectJ implements ApplicationContextAware{
 					.annotateMethod(AnnotationDescription.Builder.ofType(RpcEnhancer.class).define("url", url).define("serviceClass", serviceClass).build())
 					.annotateType(AnnotationDescription.Builder.ofType(Component.class).build())
 					.make();
-			aopTarget.saveIn(new File(URL.getPath()));
-			
+//			将.class文件存入路径不太好，1、是再次运行的时候mJVM就会主动load .class 文件，这行代码就会重复加载;2、是这行代码主要意义是在运行时动态修改字节码，\G
+//			虽然修改后的字节码并没有起到作用，可能再次run就可以被容器增强管理到，但那样并不是我预期的。所以这种方法我应该是用错了。
+//			或者需要老老实实的把HttpClient通信的方法一个个拼进字节码...不知道是不是这样，想想工程量似乎有点大...听说bytebuddy很好用，\G
+//			但我似乎没整明白，看它GitHub上面的Demo似乎只有一些简单类型的增强，要定制化的话似乎是要从预期的字节码逆推，然后再拼接进去？
+//			aopTarget.saveIn(new File(URL.getPath()));
 			Class<?> result = aopTarget.load(this.getClass().getClassLoader()).getLoaded();
 			//生成的同时注册进Spring容器中，以便被AOP代理
 			GenericWebApplicationContext pContext =  (GenericWebApplicationContext) context;
@@ -98,68 +99,17 @@ public class RpcAspectJ implements ApplicationContextAware{
 			String name = serviceClass.getName();
 			factory.registerSingleton(name, object);
 			return (T) result;
-		} catch (IllegalArgumentException | SecurityException | IllegalStateException | InstantiationException | IllegalAccessException | IOException e) {
+		} catch (IllegalArgumentException | SecurityException | IllegalStateException | InstantiationException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
     	
     	return null;
     }
-    /**
-     * 这里通过字节码生成生成serviceClass的代理实现类
-     * ....然后再增强实现类，增加注解实现AOP...感觉做的比较愚蠢...
-     * 但字节码拼那么长的逻辑...确实很让人头大...
-     * @param serciceClass
-     * @param url
-     * @return
-     * @throws IllegalAccessException 
-     * @throws InstantiationException 
-     */
-    public <T> T generateProxClass(final Class<T> serviceClass,final String url,Method[] delegateMehtod) throws InstantiationException, IllegalAccessException {
-//    	List<Object> fitMethod = Arrays.asList(delegateMehtod).stream()
-//    					.filter(l->{return isObjectMethod(l);}).collect(Collectors.toList());
-    	
-    	try {
-    		//先生成默认实现类，再用字节码增强实现类，把注解加到实现类方法上
-    		Unloaded<T> target = (Unloaded<T>) new ByteBuddy().with(new NamingStrategy.AbstractBase() {//==subclass().name("io.kimmking.rpcfx.demo.consumer.TRpcSample")==
-						@Override
-						protected String name(TypeDescription superClass) {
-    				        return "io.kimmking.rpcfx.demo.consumer." + superClass.getSimpleName() + "Test";
-						}
-    				  })
-					  .subclass(serviceClass,ConstructorStrategy.Default.DEFAULT_CONSTRUCTOR)
-					  .method(ElementMatchers.anyOf(delegateMehtod))
-					  .intercept(MethodDelegation.to(new TestInterceptor()))
-//					  .intercept(new Implementation.Simple(new ByteCodeAppender() {
-//						@Override
-//						public Size apply(MethodVisitor methodVisitor, Context implementationContext,
-//								MethodDescription instrumentedMethod) {
-////						    if (!instrumentedMethod.getReturnType().asErasure().represents(Object.class)) {
-////						        throw new IllegalArgumentException(instrumentedMethod + " must return Object");
-////						      }
-//						      StackManipulation.Size operandStackSize = new StackManipulation.Compound(
-//						    		  MethodReturn.REFERENCE
-//						      ).apply(methodVisitor, implementationContext);
-//						      return new Size(operandStackSize.getMaximalSize(),
-//						                      instrumentedMethod.getStackSize());
-//						}
-//					  }))
-					  .make();
-    		          target.saveIn(new File(URL.getPath()));
-					  Class<?> result = target.load(new RpcAspectJ().getClass().getClassLoader()).getLoaded();
-					  
-    				return (T) result.newInstance();
-		} catch (IllegalArgumentException | SecurityException | IOException e) {
-			e.printStackTrace();
-		}
-
-    	return (T) new Object();
-    }
-
 
 	/**
-     *     想基于Spring AspectJ的AOP由于接口不能被Spring管理，想要用AspectJ AOP进行替换代理，则OrderService之类的Service需要定义为一个类才行。
-     *     也可以直接切这个方法，但性能就很慢了。
-     *     听课之后：用字节码增强，但还是想试下AspectJ来试一下,原Rpcfx类为final修饰，无法被增强，因此需要去掉final关键字
+     * 想基于Spring AspectJ的AOP由于接口不能被Spring管理，想要用AspectJ AOP进行替换代理，则OrderService之类的Service需要定义为一个类才行。
+     * 也可以直接切这个方法，但性能就很慢了。
+     * 听课之后：用字节码增强，但还是想试下AspectJ来试一下,原Rpcfx类为final修饰，无法被增强，因此需要去掉final关键字
      * @param serviceClass
      * @param url
      * @return
