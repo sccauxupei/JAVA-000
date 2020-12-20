@@ -1,17 +1,18 @@
 package io.kimmking.rpcfx.demo.consumer;
 
 
+import static org.assertj.core.api.Assertions.linesOf;
+
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Vector;
 
-import org.aspectj.lang.annotation.Pointcut;
-import org.hibernate.validator.internal.util.privilegedactions.NewInstance;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.cglib.reflect.MethodDelegate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -27,19 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.NamingStrategy;
 import net.bytebuddy.description.annotation.AnnotationDescription;
-import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.DynamicType.Unloaded;
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
 import net.bytebuddy.implementation.FixedValue;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.implementation.Implementation.Context;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.implementation.bytecode.ByteCodeAppender;
-import net.bytebuddy.implementation.bytecode.StackManipulation;
-import net.bytebuddy.implementation.bytecode.member.MethodReturn;
-import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.matcher.ElementMatchers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -57,7 +50,7 @@ public class RpcAspectJ implements ApplicationContextAware{
     public <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){
     	//判断是否需要增强
     	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
-		Method[] targetMehtod = serviceClass.getDeclaredMethods();
+		Method[] targetMehtod = serviceClass.getDeclaredMethods();	
 		//为抽象类方法添加注解和函数体的写法,将serviceClass,url传递
 		//误区：AspectJ似乎是编译时增强的，其实这也可以理解，毕竟在@Pointcut("@annotation())这里应该猜到的，如果不是编译期增强，那整个扫包、查看注解过程其实很长的
 		//但AOP调用并没又很慢，所以应该猜一下是编译期增强的。
@@ -71,7 +64,7 @@ public class RpcAspectJ implements ApplicationContextAware{
 					.subclass(serviceClass,ConstructorStrategy.Default.DEFAULT_CONSTRUCTOR)
 					.method(ElementMatchers.anyOf(targetMehtod))
 //					.intercept(MethodDelegation.to(Interceptor.class))//报错None of [protected void java.lang.Object.finalize() throws java.lang.Throwable,...]allows for delegation from public abstract io.kimmking.rpcfx.demo.api.User io.kimmking.rpcfx.demo.api.UserService.findById(int)
-//					.intercept(new Implementation.Simple(new ByteCodeAppender() {
+//					.intercept(new Implementation.Simple(new ByteCodeAppender() {//拼接字节码用的类
 //						@Override
 //						public Size apply(MethodVisitor methodVisitor, Context implementationContext,
 //								MethodDescription instrumentedMethod) {
@@ -90,7 +83,11 @@ public class RpcAspectJ implements ApplicationContextAware{
 //			虽然修改后的字节码并没有起到作用，可能再次run就可以被容器增强管理到，但那样并不是我预期的。所以这种方法我应该是用错了。
 //			或者需要老老实实的把HttpClient通信的方法一个个拼进字节码...不知道是不是这样，想想工程量似乎有点大...听说bytebuddy很好用，\G
 //			但我似乎没整明白，看它GitHub上面的Demo似乎只有一些简单类型的增强，要定制化的话似乎是要从预期的字节码逆推，然后再拼接进去？
-//			aopTarget.saveIn(new File(URL.getPath()));
+//			try {
+//				aopTarget.saveIn(new File(URL.getPath()));
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
 			Class<?> result = aopTarget.load(this.getClass().getClassLoader()).getLoaded();
 			//生成的同时注册进Spring容器中，以便被AOP代理
 			GenericWebApplicationContext pContext =  (GenericWebApplicationContext) context;
