@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.Vector;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -40,13 +41,13 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 
 @Component
-public class RpcAspectJ implements ApplicationContextAware{
+public class RpcAspectJ implements ApplicationContextAware,BeanPostProcessor{
 	private static final URL URL= new RpcAspectJ().getClass().getResource("/");
 	private ApplicationContext context;
     static {
         ParserConfig.getGlobalInstance().addAccept("io.kimmking");
     }
-
+    //调用时机不对，我试试大概在Bean初始化阶段把所有的Service接口都增强丢尽Spring管理，这个方法是在初始化完毕之后的。
     public <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){
     	//判断是否需要增强
     	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
