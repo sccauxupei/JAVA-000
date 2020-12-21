@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.aspectj.weaver.loadtime.Aj;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.yaml.snakeyaml.Yaml;
@@ -49,7 +51,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 
 //@Component
-@Configuration
+//@Configuration
 public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProcessor{
 	static {
 		ParserConfig.getGlobalInstance().addAccept("io.kimmking");
@@ -58,7 +60,7 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 	private ApplicationContext context;
         
     //调用时机不对，我试试大概在Bean初始化阶段把所有的Service接口都增强丢进Spring管理，这个方法是在初始化完毕之后调用的,肯定得不到AOP增强。
-    public <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){	
+    public static <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){	
     	//判断是否需要增强
     	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
 		Method[] targetMehtod = serviceClass.getDeclaredMethods();	
@@ -69,7 +71,7 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 			DynamicType.Unloaded<T> aopTarget = (Unloaded<T>) new ByteBuddy().with(new NamingStrategy.AbstractBase() {//==subclass().name("io.kimmking.rpcfx.demo.consumer.TRpcSample")==
 						@Override
 						protected String name(TypeDescription superClass) {
-					        return "io.kimmking.rpcfx.demo.consumer." + superClass.getSimpleName() + "TargetTest";
+					        return "io.kimmking.rpcfx.demo.consumer.generate." + superClass.getSimpleName() + "TargetTest";
 						}
 					  })
 					.subclass(serviceClass,ConstructorStrategy.Default.DEFAULT_CONSTRUCTOR)
@@ -89,28 +91,27 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 					.intercept(FixedValue.nullValue())
 					.annotateMethod(AnnotationDescription.Builder.ofType(RpcEnhancer.class).define("url", url).define("serviceClass", serviceClass).build())
 					.annotateType(AnnotationDescription.Builder.ofType(Component.class).build())
+					.annotateType(AnnotationDescription.Builder.ofType(Primary.class).build())
 					.make();
 //			将.class文件存入路径不太好，1、是再次运行的时候mJVM就会主动load .class 文件，这行代码就会重复加载;2、是这行代码主要意义是在运行时动态修改字节码，\G
 //			虽然修改后的字节码并没有起到作用，可能再次run就可以被容器增强管理到，但那样并不是我预期的。所以这种方法我应该是用错了。
 //			或者需要老老实实的把HttpClient通信的方法一个个拼进字节码...不知道是不是这样，想想工程量似乎有点大...听说bytebuddy很好用，\G
 //			但我似乎没整明白，看它GitHub上面的Demo似乎只有一些简单类型的增强，要定制化的话似乎是要从预期的字节码逆推，然后再拼接进去？
-//			try {
-//				aopTarget.saveIn(new File(URL.getPath()));
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-			Class<?> result = aopTarget.load(this.getClass().getClassLoader()).getLoaded();
+			try {
+				aopTarget.saveIn(new File(URL.getPath()));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+//			Class<?> result = aopTarget.load(new RpcAspectJ().getClass().getClassLoader()).getLoaded();
 			//生成的同时注册进Spring容器中，以便被AOP代理，注册Bean定义提升到上一层
 //			GenericWebApplicationContext pContext =  (GenericWebApplicationContext) context;
 //			ConfigurableBeanFactory factory =  pContext.getBeanFactory();
-			Object object = result.newInstance();
+//			Object object = result.newInstance();
 //			String name = serviceClass.getName();
 //			factory.registerSingleton(name, object);
-			return (T) object;
-		} catch (IllegalArgumentException | SecurityException | IllegalStateException | InstantiationException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-    	return null;
+//		} catch (IllegalArgumentException | SecurityException | IllegalStateException | InstantiationException | IllegalAccessException e) {
+		}finally {}
+		return null;
     }
 
 	/**
@@ -120,16 +121,7 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
      * @param serviceClass
      * @param url
      * @return
-     */
-    @RpcEnhancer
-    public <T> T create(final Class<T> serviceClass, final String url) {
-        // 0. 替换动态代理 -> AOP
-    	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
-    	return null;
-//        return (T) Proxy.newProxyInstance(RpcAspectJ.class.getClassLoader(), new Class[]{serviceClass}, new MockHandler());
-
-    }
-    
+     */   
     @Slf4j
     public static class RpcfxInvocationHandler implements InvocationHandler {
     	
@@ -188,7 +180,7 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 		this.context = context;
 	}
 	
-	// BeanDefinitionRefistert
+	// BeanDefinitionRegistert
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		Map<String,String> resource = getYmlConfig();
@@ -204,6 +196,9 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 	        //获取到所有接口后，迭代调用 generateAOPProxClass 进行增强并注入BeanFactory
 	        for(Class<?> serviceClass : interfs) {
 	        	Object target = generateAOPProxClass(serviceClass,uri);
+	        	
+	        	Aj aj=new Aj();
+	        	aj.initialize();
 	        	if(target != null)
 	        		beanFactory.registerSingleton(serviceClass.getName(), target);
 	        }

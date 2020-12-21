@@ -33,12 +33,9 @@ import okhttp3.RequestBody;
 @Aspect
 @Component
 @Slf4j
-@Deprecated
 public class RpcAdvice {
 	
     public static final MediaType JSONTYPE = MediaType.get("application/json; charset=utf-8");
-	private Class<?> classType;
-	private String url;
 	
 	@Pointcut("@annotation(io.kimmking.rpcfx.demo.consumer.annotation.RpcEnhancer)")
     public void agrsAop() {}
@@ -46,31 +43,28 @@ public class RpcAdvice {
 	//这里需要自己拼接字节码
 	//这个方法并不好，只是实现下试试看，其实不如直接用JDK的InterceptorHandler。
 	//因为这里也直接用了InterceptorHandler
-    @Around("agrsAop()")
-    public Object doProcess(ProceedingJoinPoint point) throws Throwable {
-    	
-    	System.err.println("success");
+    @Around("agrsAop()&& @annotation(enhancer)")
+    public Object doProcess(ProceedingJoinPoint point,RpcEnhancer enhancer) throws Throwable {
+       	long start = System.currentTimeMillis();
+        RpcfxRequest request = new RpcfxRequest();
+        request.setServiceClass(enhancer.serviceClass().getName());
+        request.setMethod(point.getSignature().getName());
+        request.setParams(point.getArgs());
+        log.info("invoke 发送响应前执行时间为：{} ms",System.currentTimeMillis() - start);
+        
+        RpcfxResponse response = post(request, enhancer.url());
+        
+        log.info("invoke 发送响应后执行时间为：{} ms",System.currentTimeMillis() - start);
         // 这里判断response.status，处理异常
         // 考虑封装一个全局的RpcfxException
-        return null;
+        System.err.println("success");
+        return JSON.parse(response.getResult().toString());
+        // 这里判断response.status，处理异常
+        // 考虑封装一个全局的RpcfxException
     }
     
-    @Before("execution(* io.kimmking.rpcfx.demo.consumer.*TargetTest.*(..))")
-    public void permissionCheck() {
-        System.out.println("模拟权限检查");
-    }
     
-    
-    /**
-	 * @param l
-	 * @return
-	 */
-	private boolean isWebUrl(Object l) {
-		return l.toString().charAt(1) == '.' 
-				|| l.toString().charAt(2) == '.' || l.toString().charAt(3) == '.';
-	}
-
-	private static RpcfxResponse post(RpcfxRequest req, String url) throws IOException {
+    private static RpcfxResponse post(RpcfxRequest req, String url) throws IOException {
     	long start = System.currentTimeMillis();
         String reqJson = JSON.toJSONString(req);
         System.out.println("req json: "+reqJson);
@@ -88,24 +82,23 @@ public class RpcAdvice {
         return JSON.parseObject(respJson, RpcfxResponse.class);
     }
 	
-	public static class JavaassistInterceptor implements InvocationHandler{
-		Object target;
-		RpcfxRequest request;
-		String url;
-
-		public JavaassistInterceptor(Object target, RpcfxRequest request, String url) {
-			this.target = target;
-			this.request = request;
-			this.url = url;
-		}
-
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
-            request.setMethod(method.getName());
-            request.setParams(params);
-            RpcfxResponse response = post(request, url);
-            return JSON.parse(response.getResult().toString());
-		}
-		
-	}
+//	public static class JavaassistInterceptor implements InvocationHandler{
+//		Object target;
+//		RpcfxRequest request;
+//		String url;
+//
+//		public JavaassistInterceptor(Object target, RpcfxRequest request, String url) {
+//			this.target = target;
+//			this.request = request;
+//			this.url = url;
+//		}
+//
+//		@Override
+//		public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
+//            request.setMethod(method.getName());
+//            request.setParams(params);
+//            RpcfxResponse response = post(request, url);
+//            return JSON.parse(response.getResult().toString());
+//		}
+//	}
 }
