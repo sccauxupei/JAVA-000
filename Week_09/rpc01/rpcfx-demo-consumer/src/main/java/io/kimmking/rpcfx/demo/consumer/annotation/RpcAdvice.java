@@ -10,6 +10,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -36,13 +37,11 @@ import okhttp3.RequestBody;
 public class RpcAdvice {
 	
     public static final MediaType JSONTYPE = MediaType.get("application/json; charset=utf-8");
+
 	
 	@Pointcut("@annotation(io.kimmking.rpcfx.demo.consumer.annotation.RpcEnhancer)")
     public void agrsAop() {}
 
-	//这里需要自己拼接字节码
-	//这个方法并不好，只是实现下试试看，其实不如直接用JDK的InterceptorHandler。
-	//因为这里也直接用了InterceptorHandler
     @Around("agrsAop()&& @annotation(enhancer)")
     public Object doProcess(ProceedingJoinPoint point,RpcEnhancer enhancer) throws Throwable {
        	long start = System.currentTimeMillis();
@@ -80,24 +79,4 @@ public class RpcAdvice {
         log.info("post 执行时间为：{} ms",System.currentTimeMillis() - start);
         return JSON.parseObject(respJson, RpcfxResponse.class);
     }
-	
-//	public static class JavaassistInterceptor implements InvocationHandler{
-//		Object target;
-//		RpcfxRequest request;
-//		String url;
-//
-//		public JavaassistInterceptor(Object target, RpcfxRequest request, String url) {
-//			this.target = target;
-//			this.request = request;
-//			this.url = url;
-//		}
-//
-//		@Override
-//		public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
-//            request.setMethod(method.getName());
-//            request.setParams(params);
-//            RpcfxResponse response = post(request, url);
-//            return JSON.parse(response.getResult().toString());
-//		}
-//	}
 }

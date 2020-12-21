@@ -6,6 +6,7 @@ import io.kimmking.rpcfx.demo.api.OrderService;
 import io.kimmking.rpcfx.demo.api.User;
 import io.kimmking.rpcfx.demo.api.UserService;
 import io.kimmking.rpcfx.demo.api.util.FindClassUtil;
+import io.kimmking.rpcfx.demo.consumer.annotation.PreInit;
 import io.kimmking.rpcfx.demo.consumer.testinf.UserTestService;
 import net.bytebuddy.implementation.Implementation.Context;
 
@@ -70,14 +71,10 @@ public class RpcfxClientApplication {
 	// 二方库
 	// 三方库 lib
 	// nexus, userserivce -> userdao -> user
-	//
 	public static void main(String[] args) {
-
-		// UserService service = new xxx();
-		// service.findById
-		
 		//用了傻办法，在ApplicationContext被创建前写class进ClassPath下....成功切进去了
 		//我了解了下，如果自定义生成的类要被AOP切进去，似乎需要在Bean定义被解析的那个时间点注入。
+		//当前的实现方法比较刻板，虽然可以从resource里面强行把配置写活，但总觉得有点笨...
 		init();
 		// 新加一个OrderService
 		 SpringApplication.run(RpcfxClientApplication.class, args);

@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.aspectj.weaver.loadtime.Aj;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -52,12 +53,11 @@ import okhttp3.RequestBody;
 
 //@Component
 //@Configuration
-public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProcessor{
+public class RpcAspectJ{
 	static {
 		ParserConfig.getGlobalInstance().addAccept("io.kimmking");
 	}
 	private static final URL URL= new RpcAspectJ().getClass().getResource("/");
-	private ApplicationContext context;
         
     //调用时机不对，我试试大概在Bean初始化阶段把所有的Service接口都增强丢进Spring管理，这个方法是在初始化完毕之后调用的,肯定得不到AOP增强。
     public static <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){	
@@ -113,115 +113,4 @@ public class RpcAspectJ implements ApplicationContextAware,BeanFactoryPostProces
 		}finally {}
 		return null;
     }
-
-	/**
-     * 想基于Spring AspectJ的AOP由于接口不能被Spring管理，想要用AspectJ AOP进行替换代理，则OrderService之类的Service需要定义为一个类才行。
-     * 也可以直接切这个方法，但性能就很慢了。
-     * 听课之后：用字节码增强，但还是想试下AspectJ来试一下,原Rpcfx类为final修饰，无法被增强，因此需要去掉final关键字
-     * @param serviceClass
-     * @param url
-     * @return
-     */   
-    @Slf4j
-    public static class RpcfxInvocationHandler implements InvocationHandler {
-    	
-        public static final MediaType JSONTYPE = MediaType.get("application/json; charset=utf-8");
-
-        private final Class<?> serviceClass;
-        private final String url;
-        public <T> RpcfxInvocationHandler(Class<T> serviceClass, String url) {
-            this.serviceClass = serviceClass;
-            this.url = url;
-        }
-
-        // 可以尝试，自己去写对象序列化，二进制还是文本的，，，rpcfx是xml自定义序列化、反序列化，json: code.google.com/p/rpcfx
-        // int byte char float double long bool
-        // [], data class
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
-        	long start = System.currentTimeMillis();
-            RpcfxRequest request = new RpcfxRequest();
-            request.setServiceClass(this.serviceClass.getName());
-            request.setMethod(method.getName());
-            request.setParams(params);
-            log.info("invoke 发送响应前执行时间为：{} ms",System.currentTimeMillis() - start);
-            
-            RpcfxResponse response = post(request, url);
-            
-            log.info("invoke 发送响应后执行时间为：{} ms",System.currentTimeMillis() - start);
-            // 这里判断response.status，处理异常
-            // 考虑封装一个全局的RpcfxException
-
-            return JSON.parse(response.getResult().toString());
-        }
-
-        private RpcfxResponse post(RpcfxRequest req, String url) throws IOException {
-        	long start = System.currentTimeMillis();
-            String reqJson = JSON.toJSONString(req);
-            System.out.println("req json: "+reqJson);
-
-            // 1.可以复用client
-            // 2.尝试使用httpclient或者netty client
-            OkHttpClient client = new OkHttpClient();
-            final Request request = new Request.Builder()
-                    .url(url)
-                    .post(RequestBody.create(JSONTYPE, reqJson))
-                    .build();
-            String respJson = client.newCall(request).execute().body().string();
-            System.out.println("resp json: "+respJson);
-            log.info("post 执行时间为：{} ms",System.currentTimeMillis() - start);
-            return JSON.parseObject(respJson, RpcfxResponse.class);
-        }
-    }
-
-	@Override
-	public void setApplicationContext(ApplicationContext context) throws BeansException {
-		this.context = context;
-	}
-	
-	// BeanDefinitionRegistert
-	@Override
-	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		Map<String,String> resource = getYmlConfig();
-		//根据配置的扫描包路径扫描路径下的接口
-		String pk = resource.get("scanPackage");
-        String uri = resource.get("url");
-        String path = pk.replace('.', '/');  
-        ClassLoader classloader = Thread.currentThread().getContextClassLoader();  
-        URL url = classloader.getResource(path);
-        List<Class<?>> interfs;
-		try {
-			interfs = FindClassUtil.getAssignInterFace(new File(url.getFile()), pk);
-	        //获取到所有接口后，迭代调用 generateAOPProxClass 进行增强并注入BeanFactory
-	        for(Class<?> serviceClass : interfs) {
-	        	Object target = generateAOPProxClass(serviceClass,uri);
-	        	
-	        	Aj aj=new Aj();
-	        	aj.initialize();
-	        	if(target != null)
-	        		beanFactory.registerSingleton(serviceClass.getName(), target);
-	        }
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-
-	}
-	//获取配置文件中的url和Service所在的包
-	private Map<String, String> getYmlConfig() {
-	    URL uri = RpcfxClientApplication.class.getResource("/application.yml");
-	    Yaml yaml = new Yaml();
-	    Map<String, String> result = new HashMap<>();
-	    //通过yaml对象将配置文件的输入流转换成map原始map对象
-	    try(FileInputStream io = new FileInputStream(uri.getPath())){
-		    Map map = yaml.loadAs(io, Map.class);
-			String url = ((Map<String, Object>) map.get("rpc")).get("url").toString();
-			String scanPackage = ((Map<String, Object>) map.get("rpc")).get("scanPackage").toString();
-			result.put("url", url);
-			result.put("scanPackage",scanPackage);
-	    }catch(IOException e) {
-	    	
-	    }
-	    return result;
-	}
 }
