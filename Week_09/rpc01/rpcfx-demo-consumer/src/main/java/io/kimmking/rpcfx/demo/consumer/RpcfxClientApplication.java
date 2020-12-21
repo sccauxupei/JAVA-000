@@ -80,34 +80,28 @@ public class RpcfxClientApplication {
 		//我了解了下，如果自定义生成的类要被AOP切进去，似乎需要在Bean定义被解析的那个时间点注入。
 		init();
 		// 新加一个OrderService
-		ApplicationContext context = SpringApplication.run(RpcfxClientApplication.class, args);
-		try {
-			UserService service = (UserService) context.getBean(UserService.class);
-			System.err.println(service.findById(1));
-//			OrderService orderService = (OrderService) context.getBean(OrderService.class);
-//			System.err.println(orderService.findOrderById(1));
-		} catch (BeansException e) {
-			e.printStackTrace();
-		}
-
-
+		 SpringApplication.run(RpcfxClientApplication.class, args);
 	}
 	@Controller
 	@RequestMapping("/find")
 	public class FindServiceController{	
 //		@Autowired
 //		RpcAspectJ aspect;
+		@Autowired
+		UserService userService;
+		@Autowired
+		OrderService orderService;
 		
 		@RequestMapping("/query")
 		@ResponseBody
 		public void rpcQuery() {
 //			UserService userService = aspect.create(UserService.class, "http://localhost:8080/");
-//			User user = userService.findById(1);
-//			System.out.println("find user id=1 from server: " + user.getName());
+			User user = userService.findById(1);
+			System.out.println("find user id=1 from server: " + user.getName());
 //			
 //			OrderService orderService = aspect.create(OrderService.class, "http://localhost:8080/");
-//			Order order = orderService.findOrderById(1992129);
-//			System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));
+			Order order = orderService.findOrderById(1992129);
+			System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));
 		}
 	}
 

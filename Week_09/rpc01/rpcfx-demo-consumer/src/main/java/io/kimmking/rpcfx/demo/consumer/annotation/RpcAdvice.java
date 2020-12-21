@@ -57,7 +57,6 @@ public class RpcAdvice {
         log.info("invoke 发送响应后执行时间为：{} ms",System.currentTimeMillis() - start);
         // 这里判断response.status，处理异常
         // 考虑封装一个全局的RpcfxException
-        System.err.println("success");
         return JSON.parse(response.getResult().toString());
         // 这里判断response.status，处理异常
         // 考虑封装一个全局的RpcfxException
