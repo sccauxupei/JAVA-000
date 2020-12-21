@@ -10,7 +10,12 @@ import net.bytebuddy.implementation.Implementation.Context;
 
 import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.naming.factory.BeanFactory;
 import org.springframework.beans.BeansException;
@@ -24,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.yaml.snakeyaml.Yaml;
 
 @SpringBootApplication
 public class RpcfxClientApplication {
@@ -40,13 +46,17 @@ public class RpcfxClientApplication {
 		// 新加一个OrderService
 		ApplicationContext context = SpringApplication.run(RpcfxClientApplication.class, args);
 		try {
-			RpcAspectJ utilAspectJ = context.getBean(RpcAspectJ.class);
-			Object object = utilAspectJ.generateAOPProxClass(UserService.class, "http://localhost:8080/");
+//			RpcAspectJ utilAspectJ = context.getBean(RpcAspectJ.class);
+//			Object object = utilAspectJ.generateAOPProxClass(UserService.class, "http://localhost:8080/");
 			UserService service = (UserService) context.getBean(UserService.class.getName());
 			System.err.println(service.findById(1));
+			OrderService orderService = (OrderService) context.getBean(OrderService.class.getName());
+			System.err.println(orderService.findOrderById(1));
 		} catch (BeansException e) {
 			e.printStackTrace();
 		}
+
+
 	}
 	
 	@Controller

@@ -3,4 +3,7 @@ server:
   
   profiles:
     active: true
+rpc:
+  url: http://localhost:8080/
+  scanPackage: io.kimmking.rpcfx.demo.api
 

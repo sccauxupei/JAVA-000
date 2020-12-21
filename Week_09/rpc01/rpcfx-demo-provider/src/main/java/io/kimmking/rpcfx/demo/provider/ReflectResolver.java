@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import io.kimmking.rpcfx.api.RpcfxResolver;
-import io.kimmking.rpcfx.demo.provider.utils.FindAllSubClassUtil;
+import io.kimmking.rpcfx.demo.api.util.FindClassUtil;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -45,7 +45,7 @@ public class ReflectResolver implements RpcfxResolver {
 				try {
 					//找到当前路径下该接口所有的子类，默认取第一个
 					Class<?> interf = this.getClass().getClassLoader().loadClass(serviceClass);
-					List<Class<?>>  allSubClass = FindAllSubClassUtil.getAllAssignedClass(interf,this.getClass());
+					List<Class<?>>  allSubClass = FindClassUtil.getAllAssignedClass(interf,this.getClass());
 					log.info("当前接口所有子类",allSubClass.toString());
 					person = allSubClass.get(0).newInstance();
 					return person;

@@ -1,4 +1,4 @@
-package io.kimmking.rpcfx.demo.provider.utils;
+package io.kimmking.rpcfx.demo.api.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +17,10 @@ import javax.swing.ListModel;
  * @type_name 类名 FindAllSubClassUtil
  * @function 功能 TODO
  */
-public class FindAllSubClassUtil<T> {
+public class FindClassUtil<T> {
 	
 	private static Map<String, List<Class<?>>> mapCache = new ConcurrentHashMap<String, List<Class<?>>>();
+	
     /** 
      * 获取同一路径下所有子类或接口实现类 
      * 由于基类与实现类不在同一路径下，找实现类需要从当前类的路径下找，所以传了一个now为this的Class<?>。 
@@ -43,7 +44,7 @@ public class FindAllSubClassUtil<T> {
     
     /** 
      * 取得当前类路径下的所有类 
-     *  
+     * 返回所有适合的子类接口 
      * @param cls 
      * @return 
      * @throws IOException 
@@ -62,14 +63,14 @@ public class FindAllSubClassUtil<T> {
         String path = pk.replace('.', '/');  
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();  
         URL url = classloader.getResource(path);
-        List<Class<?>> resultSet = getClasses(new File(url.getFile()), pk,cls);
+        List<Class<?>> resultSet = getAssignSubClasses(new File(url.getFile()), pk,cls);
         mapCache.put(cls.getName(), resultSet);
         return resultSet;  
     }  
   
     /** 
      * 迭代查找类 
-     *  
+     * 获取子类接口 
      * @param dir 
      * @param pk 
      * @return 
@@ -77,14 +78,14 @@ public class FindAllSubClassUtil<T> {
      * @throws IllegalAccessException 
      * @throws InstantiationException 
      */  
-    private static List<Class<?>> getClasses(File dir, String pk,Class<?> targetInterface) throws ClassNotFoundException, InstantiationException, IllegalAccessException {  
+    private static List<Class<?>> getAssignSubClasses(File dir, String pk,Class<?> targetInterface) throws ClassNotFoundException, InstantiationException, IllegalAccessException {  
         List<Class<?>> classes = new ArrayList<Class<?>>();  
         if (!dir.exists()) {  
             return classes;  
         }  
         for (File f : dir.listFiles()) {  
             if (f.isDirectory()) {  
-                classes.addAll(getClasses(f, pk + "." + f.getName(),targetInterface));  
+                classes.addAll(getAssignSubClasses(f, pk + "." + f.getName(),targetInterface));  
             }  
             String name = f.getName();  
             if (name.endsWith(".class")) {
@@ -96,5 +97,34 @@ public class FindAllSubClassUtil<T> {
         }  
         return classes;  
     }  
-  
+    
+    /** 
+     * 迭代查找接口
+     * 消费端增强用，由于只用一次所以直接返回不配置缓存了。  
+     * @param dir 
+     * @param pk 
+     * @return 
+     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException 
+     * @throws InstantiationException 
+     */  
+    public static List<Class<?>> getAssignInterFace(File dir, String pk) throws ClassNotFoundException, InstantiationException, IllegalAccessException {  
+        List<Class<?>> classes = new ArrayList<Class<?>>();  
+        if (!dir.exists()) {  
+            return classes;  
+        }  
+        for (File f : dir.listFiles()) {  
+            if (f.isDirectory()) {  
+                classes.addAll(getAssignInterFace(f, pk + "." + f.getName()));  
+            }  
+            String name = f.getName();  
+            if (name.endsWith(".class")) {
+            	Class<?> candidate = Class.forName(pk + "." + name.substring(0, name.length() - 6));
+            	if(candidate.isInterface() && candidate.getName().endsWith("Service")) {
+            		classes.add(Class.forName(pk + "." + name.substring(0, name.length() - 6)));              		
+            	}
+            }  
+        }  
+        return classes;  
+    }  
 }  
