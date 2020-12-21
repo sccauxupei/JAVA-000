@@ -77,13 +77,11 @@ public class RpcfxClientApplication {
 		//当前的实现方法比较刻板，虽然可以从resource里面强行把配置写活，但总觉得有点笨...
 		init();
 		// 新加一个OrderService
-		 SpringApplication.run(RpcfxClientApplication.class, args);
+		SpringApplication.run(RpcfxClientApplication.class, args);
 	}
 	@Controller
 	@RequestMapping("/find")
 	public class FindServiceController{	
-//		@Autowired
-//		RpcAspectJ aspect;
 		@Autowired
 		UserService userService;
 		@Autowired
@@ -95,7 +93,6 @@ public class RpcfxClientApplication {
 //			UserService userService = aspect.create(UserService.class, "http://localhost:8080/");
 			User user = userService.findById(1);
 			System.out.println("find user id=1 from server: " + user.getName());
-//			
 //			OrderService orderService = aspect.create(OrderService.class, "http://localhost:8080/");
 			Order order = orderService.findOrderById(1992129);
 			System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));

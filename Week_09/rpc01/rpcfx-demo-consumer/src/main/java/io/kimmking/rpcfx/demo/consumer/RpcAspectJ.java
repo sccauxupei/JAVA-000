@@ -60,9 +60,8 @@ public class RpcAspectJ{
 	private static final URL URL= new RpcAspectJ().getClass().getResource("/");
         
     //调用时机不对，我试试大概在Bean初始化阶段把所有的Service接口都增强丢进Spring管理，这个方法是在初始化完毕之后调用的,肯定得不到AOP增强。
-    public static <T> T generateAOPProxClass(final Class<T> serviceClass,final String url){	
+    public static <T> void generateAOPProxClass(final Class<T> serviceClass,final String url){	
     	//判断是否需要增强
-    	Method[] delegateMehtod = serviceClass.getDeclaredMethods();
 		Method[] targetMehtod = serviceClass.getDeclaredMethods();	
 		//为抽象类方法添加注解和函数体的写法,将serviceClass,url传递
 		//误区：AspectJ似乎是编译时增强的，其实这也可以理解，毕竟在@Pointcut("@annotation())这里应该猜到的，如果不是编译期增强，那整个扫包、查看注解过程其实很长的
@@ -111,6 +110,5 @@ public class RpcAspectJ{
 //			factory.registerSingleton(name, object);
 //		} catch (IllegalArgumentException | SecurityException | IllegalStateException | InstantiationException | IllegalAccessException e) {
 		}finally {}
-		return null;
     }
 }
