@@ -1,8 +1,5 @@
 package io.kimmking.rpcfx.demo.consumer;
 
-
-import static org.hamcrest.CoreMatchers.nullValue;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,7 +23,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.GenericWebApplicationContext;
-import org.yaml.snakeyaml.Yaml;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.ParserConfig;

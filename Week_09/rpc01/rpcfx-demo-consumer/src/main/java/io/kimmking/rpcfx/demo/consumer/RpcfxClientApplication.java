@@ -1,41 +1,23 @@
 package io.kimmking.rpcfx.demo.consumer;
 
-import io.kimmking.rpcfx.client.Rpcfx;
+
 import io.kimmking.rpcfx.demo.api.Order;
 import io.kimmking.rpcfx.demo.api.OrderService;
 import io.kimmking.rpcfx.demo.api.User;
 import io.kimmking.rpcfx.demo.api.UserService;
 import io.kimmking.rpcfx.demo.api.util.FindClassUtil;
-import io.kimmking.rpcfx.demo.consumer.annotation.PreInit;
-import io.kimmking.rpcfx.demo.consumer.testinf.UserTestService;
-import net.bytebuddy.implementation.Implementation.Context;
-
-import static org.mockito.Mockito.RETURNS_SMART_NULLS;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.naming.factory.BeanFactory;
-import org.aspectj.weaver.loadtime.Aj;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.yaml.snakeyaml.Yaml;
 
 @SpringBootApplication
 public class RpcfxClientApplication {

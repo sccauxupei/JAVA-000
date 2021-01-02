@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface RpcEnhancer {
+	static final String AAA = "";
 	String url() default "";
 	Class<?> serviceClass() default Object.class;
 }
